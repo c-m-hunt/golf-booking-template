@@ -1,0 +1,67 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  # =======================================================================================
+  # Edit the name
+  # =======================================================================================
+  name: golf-booker-{{.Title}}
+  # =======================================================================================
+  namespace: default
+  labels:
+    app: golf-booker
+    type: job
+spec:
+  # =======================================================================================
+  # Edit the date to run. Leave at 22:58 during summer and 23:58 in winter but change date
+  # =======================================================================================
+  schedule: "58 20 {{.CronDay}} {{.CronMonth}} *"
+  # =======================================================================================
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: golf-booker
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: golf-booker
+              image: 811771737115.dkr.ecr.eu-west-1.amazonaws.com/cmhunt/golfbooker:1.0.7
+              command: ["node", "dist/index.js"]
+              env:
+                - name: USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: golf-booker
+                      key: golfUser
+                - name: PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: golf-booker
+                      key: golfPassword
+                # =====================================
+                # Amend these params
+                # =====================================
+                - name: PLAYERS
+                  value: {{.Players}}
+                - name: TIME
+                  value: {{.Time}}
+                - name: DATE
+                  value: {{.Date}}
+                - name: COURSES
+                  value: {{.Course}}
+                # =====================================
+                - name: REFRESH_TIME
+                  value: "15000"
+                - name: DRY_RUN
+                  value: "0"
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: aws-creds
+                      key: accessKeyId
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: aws-creds
+                      key: secretAccessKey
